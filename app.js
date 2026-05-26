@@ -15,12 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentFontSize = 2.2; // in rem
   let activeTheme = 'dark';
   
-  // Audio synthesis & speech recognition states
-  let isListening = false;
-  let recognition = null;
-  let isReciting = false;
-  let currentUtterance = null;
-  
   // --- DOM ELEMENTS ---
   const duaaCard = document.getElementById('duaa-card');
   const duaaArabic = document.getElementById('duaa-arabic');
@@ -30,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentRepEl = document.getElementById('current-rep-count');
   const targetRepEl = document.getElementById('target-rep-count');
   const ringProgress = document.getElementById('ring-progress');
-  const speechWave = document.getElementById('speech-wave');
   const instructionLabel = document.getElementById('instruction-label');
   
   // Toolbars & Nav controls
@@ -39,9 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const navIndicator = document.getElementById('nav-indicator');
   const progressPct = document.getElementById('progress-percentage');
   const progressBarInner = document.getElementById('progress-bar-inner');
-  const speakSynthesisBtn = document.getElementById('speak-synthesis-btn');
-  const voiceRecognitionToggle = document.getElementById('voice-recognition-toggle');
-  const speechBtnLabel = document.getElementById('speech-btn-label');
   const copyBtn = document.getElementById('copy-btn');
   const shareBtn = document.getElementById('share-btn');
   
@@ -66,42 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const toast = document.getElementById('toast');
   const toastText = document.getElementById('toast-text');
 
-  // --- AUDIO HELPER (SYNTHESIZED DING SOUND) ---
-  // Uses Web Audio API to play a sweet, spiritual chime when a duaa or tasbeeh is successfully completed
-  function playSuccessChime(isTasbeeh = false) {
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      
-      if (isTasbeeh) {
-        // High soft bubble tap sound
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
-      } else {
-        // Double sweet spiritual bell/chime
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
-        osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.2); // C6
-        
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.6);
-      }
-    } catch (e) {
-      console.log('Web Audio context not allowed or not supported yet.', e);
-    }
-  }
-
   // --- INITIALIZATION ---
   async function initializeApp() {
     // Load local storage preferences
@@ -124,26 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
       duaas = await response.json();
     } catch (error) {
       console.error('Failed to load duaas.json, using offline fallback', error);
-      // Inline robust fallback to ensure it NEVER fails
       duaas = [
         {
           "id": "best_arafa",
           "title": "أفضل دعاء يوم عرفة",
           "text": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ.",
           "source": "رواه الترمذي (حديث صحيح)",
-          "meaning": "La ilaha illallah, wahdahu la sharika lah, lahul-mulku wa lahul-hamdu, wa huwa 'ala kulli shay'in qadir."
-        },
-        {
-          "id": "ibn_baz_1",
-          "title": "جوامع الاستغفار والتوبة",
-          "text": "اللَّهُمَّ اغْفِرْ لِي خَطِيئَتِي وَجَهْلِي، وَإِسْرَافِي فِي أَمْرِي، وَمَا أَنْتَ أَعْلَمُ بِهِ مِنِّي، اللَّهُمَّ اغْفِرْ لِي جَدِّي وَهَزْلِي، وَخَطَئِي وَعَمْدِي، وَكُلُّ ذَلِكَ عِنْدِي، اللَّهُمَّ اغْفِرْ لِي مَا قَدَّمْتُ وَمَا أَخَّرْتُ، وَمَا أَسْرَرْتُ وَمَا أَعْلَنْتُ، وَمَا أَنْتَ أَعْلَمُ بِهِ مِنِّي، أَنْتَ الْمُقَدِّمُ وَأَنْتَ الْمُؤَخِّرُ، وَأَنْتَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ.",
-          "source": "رواه البخاري ومسلم"
-        },
-        {
-          "id": "ibn_baz_2",
-          "title": "صلاح الدين والدنيا والآخرة",
-          "text": "اللَّهُمَّ أَصْلِحْ لِي دِينِي الَّذِي هُوَ عِصْمَةُ أَمْرِي، وَأَصْلِحْ لِي دُنْيَايَ الَّتِي فِيهَا مَعَاشِي، وَأَصْلِحْ لِي آخِرَتِي الَّتِي فِيهَا مَعَادِي، وَاجْعَلِ الْحَيَاةَ زِيَادَةً لِي فِي كُلِّ خَيْرٍ، وَاجْعَلِ الْمَوْتَ رَاحَةً لِي مِنْ كُلِّ شَرٍّ.",
-          "source": "رواه مسلم"
+          "reps": 1
         }
       ];
     }
@@ -152,9 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentIndex >= duaas.length || currentIndex < 0) {
       currentIndex = 0;
     }
-    
-    // Bind speech recognition engine if available
-    initSpeechRecognition();
     
     // Update interface views
     renderDuaa();
@@ -211,9 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
         item.classList.remove('active');
       }
     });
-
-    // Stop recitation if voice is reading when navigating
-    stopSpeechSynthesis();
   }
 
   // Update Tasbeeh metrics and svg offset
@@ -228,14 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
     ringProgress.style.strokeDashoffset = strokeDashoffset;
     
     // Update instruction label
-    if (isListening) {
-      instructionLabel.innerHTML = `<i class="fa-solid fa-microphone"></i> <span>اقرأ الدعاء بصوتك، أو انقر للتسبيح</span>`;
+    if (targetReps > 1) {
+      instructionLabel.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> <span>انقر لتكرار التسبيح (${currentRepCount}/${targetReps})</span>`;
     } else {
-      if (targetReps > 1) {
-        instructionLabel.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> <span>انقر لتكرار التسبيح (${currentRepCount}/${targetReps})</span>`;
-      } else {
-        instructionLabel.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> <span>انقر فوق البطاقة للانتقال للتالي</span>`;
-      }
+      instructionLabel.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> <span>انقر فوق البطاقة للانتقال للتالي</span>`;
     }
   }
 
@@ -292,13 +223,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentIndex < duaas.length - 1) {
       navigateTo(currentIndex + 1, 'next');
     } else {
-      // Loop back to start with visual chimes
-      playSuccessChime(false);
       showToast("تقبل الله طاعاتكم! أتممت مجلس الذكر.");
       navigateTo(0, 'next');
     }
   }
 
+  // Trigger prev
   function handlePrev() {
     if (currentIndex > 0) {
       navigateTo(currentIndex - 1, 'prev');
@@ -307,8 +237,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- TASBEEH TAPPING HANDLER ---
   function handleCardTap(e) {
-    // Avoid tapping trigger when clicking inner buttons (like favorites or speech synthesis)
-    if (e.target.closest('#bookmark-btn') || e.target.closest('#speak-synthesis-btn')) return;
+    // Avoid tapping trigger when clicking inner bookmark button
+    if (e.target.closest('#bookmark-btn')) return;
     
     // Visual ripple effect inside card at click position
     createRipple(e);
@@ -318,7 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (currentRepCount >= targetReps) {
       // Completed current duaa reps!
-      playSuccessChime(false);
       
       // Flash glowing emerald border
       duaaCard.classList.add('matched');
@@ -327,8 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
         handleNext();
       }, 700);
     } else {
-      // Just a simple tap rep increment
-      playSuccessChime(true);
       updateTasbeehCounter();
     }
   }
@@ -348,255 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       ripple.remove();
     }, 750);
-  }
-
-  // --- ARABIC SPEECH RECOGNITION (VOICE CONTROL) ---
-  function initSpeechRecognition() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.log('Web Speech Recognition API is not supported in this browser.');
-      voiceRecognitionToggle.style.display = 'none'; // hide voice button if completely unsupported
-      return;
-    }
-    
-    recognition = new SpeechRecognition();
-    recognition.lang = 'ar-SA';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    
-    recognition.onstart = () => {
-      isListening = true;
-      speechWave.classList.add('active');
-      voiceRecognitionToggle.classList.add('active');
-      voiceRecognitionToggle.querySelector('i').className = 'fa-solid fa-microphone';
-      speechBtnLabel.textContent = "الاستماع مفعل";
-      updateTasbeehCounter();
-      showToast("تم تفعيل الميكروفون، يمكنك القراءة الآن");
-    };
-    
-    recognition.onend = () => {
-      // Auto-restart if user wanted to keep it active
-      if (isListening) {
-        try {
-          recognition.start();
-        } catch (e) {
-          console.log('Error restarting recognition:', e);
-        }
-      } else {
-        speechWave.classList.remove('active');
-        voiceRecognitionToggle.classList.remove('active');
-        voiceRecognitionToggle.querySelector('i').className = 'fa-solid fa-microphone-slash';
-        speechBtnLabel.textContent = "التحدث للتنقل";
-        updateTasbeehCounter();
-      }
-    };
-    
-    recognition.onerror = (event) => {
-      console.log('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        showToast("خطأ: لم يتم إعطاء صلاحية الوصول للميكروفون");
-        toggleListening(false);
-      }
-    };
-    
-    recognition.onresult = (event) => {
-      if (duaas.length === 0) return;
-      
-      let interimTranscript = '';
-      let finalTranscript = '';
-      
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
-      }
-      
-      const combinedTranscript = (finalTranscript + ' ' + interimTranscript).trim();
-      if (!combinedTranscript) return;
-      
-      console.log('Spoken:', combinedTranscript);
-      
-      // Perform text normalization match against the current active duaa
-      const activeDuaaText = duaas[currentIndex].text;
-      const isMatched = matchArabicText(combinedTranscript, activeDuaaText);
-      
-      if (isMatched) {
-        // Stop recognition momentarily to prevent double triggers
-        recognition.stop();
-        
-        // Visual ding + counter completion
-        currentRepCount = targetReps;
-        updateTasbeehCounter();
-        
-        playSuccessChime(false);
-        duaaCard.classList.add('matched');
-        
-        showToast("قراءة صحيحة! جاري الانتقال...");
-        
-        setTimeout(() => {
-          duaaCard.classList.remove('matched');
-          handleNext();
-        }, 1200);
-      }
-    };
-  }
-
-  function toggleListening(forceState = null) {
-    if (!recognition) {
-      showToast("عذراً، متصفحك الحالي لا يدعم ميزة التعرف على الصوت");
-      return;
-    }
-    
-    const targetState = forceState !== null ? forceState : !isListening;
-    
-    if (targetState) {
-      isListening = true;
-      try {
-        recognition.start();
-      } catch (e) {
-        console.log('Error starting recognition:', e);
-      }
-    } else {
-      isListening = false;
-      try {
-        recognition.stop();
-      } catch (e) {
-        console.log('Error stopping recognition:', e);
-      }
-      speechWave.classList.remove('active');
-      voiceRecognitionToggle.classList.remove('active');
-      voiceRecognitionToggle.querySelector('i').className = 'fa-solid fa-microphone-slash';
-      speechBtnLabel.textContent = "التحدث للتنقل";
-      updateTasbeehCounter();
-      showToast("تم إيقاف الميكروفون");
-    }
-  }
-
-  // --- ARABIC TEXT NORMALIZATION & KEYWORD MATCHING ENGINE ---
-  function normalizeArabic(txt) {
-    if (!txt) return '';
-    // Strip diacritics (fatha, damma, kasra, shadda, tanween, etc.)
-    txt = txt.replace(/[\u064B-\u065F\u0670]/g, '');
-    // Normalize alefs to a simple bare alef
-    txt = txt.replace(/[أإآ]/g, 'ا');
-    // Normalize teh marbuta to simple heh
-    txt = txt.replace(/ة\b/g, 'ه');
-    // Normalize symbols & punctuation
-    txt = txt.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()«»""'؟?]/g, '');
-    // Replace multiple spaces with a single space
-    txt = txt.replace(/\s+/g, ' ');
-    return txt.trim().toLowerCase();
-  }
-
-  function matchArabicText(spoken, original) {
-    const cleanSpoken = normalizeArabic(spoken);
-    const cleanOriginal = normalizeArabic(original);
-    
-    if (!cleanSpoken || !cleanOriginal) return false;
-    
-    // Quick direct check
-    if (cleanSpoken.includes(cleanOriginal) || cleanOriginal.includes(cleanSpoken)) {
-      return true;
-    }
-    
-    // Keyword Matching:
-    // Split into individual words
-    const spokenWords = cleanSpoken.split(' ');
-    const originalWords = cleanOriginal.split(' ');
-    
-    // Filter original words to only keep significant words (>= 3 chars) to avoid matches on simple prepositions like 'في', 'من'
-    const significantOriginalWords = originalWords.filter(word => word.length >= 3);
-    
-    if (significantOriginalWords.length === 0) return false;
-    
-    // Count how many significant original words exist in the spoken text
-    let matchedCount = 0;
-    for (const originalWord of significantOriginalWords) {
-      // We check if the word exists in the spoken transcript
-      if (spokenWords.some(spokenWord => spokenWord.includes(originalWord) || originalWord.includes(spokenWord))) {
-        matchedCount++;
-      }
-    }
-    
-    // Match threshold: If the user says at least 3 significant words, OR at least 30% of the significant words of the Duaa, it matches!
-    // This allows natural recitation where Speech recognition might miss a word or two or have slightly different transcription.
-    const matchPercentage = matchedCount / significantOriginalWords.length;
-    const isKeywordMatched = matchedCount >= 3 || (significantOriginalWords.length <= 4 && matchedCount >= 2) || matchPercentage >= 0.35;
-    
-    console.log(`Matching metrics: Spoken matches ${matchedCount}/${significantOriginalWords.length} words (${Math.round(matchPercentage*100)}%). Matched: ${isKeywordMatched}`);
-    
-    return isKeywordMatched;
-  }
-
-  // --- ARABIC TEXT-TO-SPEECH (TTS SYNTHESIS RECITER) ---
-  function speakDuaa() {
-    if (!window.speechSynthesis) {
-      showToast("عذراً، متصفحك الحالي لا يدعم ميزة نطق النصوص");
-      return;
-    }
-    
-    if (isReciting) {
-      stopSpeechSynthesis();
-      return;
-    }
-    
-    if (duaas.length === 0) return;
-    
-    const duaaText = duaas[currentIndex].text;
-    
-    // Clean text of punctuation that makes synthesizers pause weirdly, but keep commas
-    const cleanForSpeech = duaaText.replace(/[«»()]/g, '');
-    
-    currentUtterance = new SpeechSynthesisUtterance(cleanForSpeech);
-    currentUtterance.lang = 'ar-SA';
-    currentUtterance.rate = 0.85; // slightly slower for peaceful, clear recitation
-    
-    // Try to find a native Arabic voice
-    const voices = window.speechSynthesis.getVoices();
-    const arabicVoice = voices.find(voice => voice.lang.startsWith('ar'));
-    if (arabicVoice) {
-      currentUtterance.voice = arabicVoice;
-    }
-    
-    currentUtterance.onstart = () => {
-      isReciting = true;
-      speakSynthesisBtn.classList.add('active');
-      speakSynthesisBtn.innerHTML = '<i class="fa-solid fa-square"></i>';
-      showToast("جاري تلاوة الدعاء الشريف...");
-    };
-    
-    currentUtterance.onend = () => {
-      isReciting = false;
-      speakSynthesisBtn.classList.remove('active');
-      speakSynthesisBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-    };
-    
-    currentUtterance.onerror = (e) => {
-      console.log('Speech synthesis error:', e);
-      isReciting = false;
-      speakSynthesisBtn.classList.remove('active');
-      speakSynthesisBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-    };
-    
-    window.speechSynthesis.speak(currentUtterance);
-  }
-
-  function stopSpeechSynthesis() {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    isReciting = false;
-    speakSynthesisBtn.classList.remove('active');
-    speakSynthesisBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-  }
-
-  // Load voices dynamically since browsers load them asynchronously
-  if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
-    window.speechSynthesis.onvoiceschanged = () => {
-      console.log('Speech synthesis voices loaded successfully.');
-    };
   }
 
   // --- BOOKMARKS & FAVORITES ENGINE ---
@@ -680,13 +358,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function toggleDrawer(forceState = null) {
-    const isOpen = forceState !== null ? forceState : !selectorDrawer.classList.contains('active');
+    const isOpen = forceState !== null ? forceState : !selectorDrawer.classList.contains('contains');
     
     if (isOpen) {
       selectorDrawer.classList.add('active');
       drawerOverlay.classList.add('active');
       selectorDrawer.setAttribute('aria-hidden', 'false');
-      renderDrawerList(); // refresh
+      renderDrawerList();
     } else {
       selectorDrawer.classList.remove('active');
       drawerOverlay.classList.remove('active');
@@ -721,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleCopy() {
     if (duaas.length === 0) return;
     const duaa = duaas[currentIndex];
-    const copyString = `✨ أذكار يوم عرفة ✨\n\n${duaa.text}\n\n📚 المصدر: ${duaa.source}\n\n🕌 أذكار وأدعية يوم عرفة - نسألكم صالح الدعاء`;
+    const copyString = `✨ أذكار وأدعية ✨\n\n${duaa.text}\n\n📚 المصدر: ${duaa.source}\n\n🕌 أذكار وأدعية يوم عرفة - نسألكم صالح الدعاء`;
     
     navigator.clipboard.writeText(copyString)
       .then(() => showToast("تم نسخ الدعاء والمصدر إلى الحافظة"))
@@ -743,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(() => console.log('Successfully shared'))
         .catch((error) => console.log('Error sharing:', error));
     } else {
-      // Fallback to copy string
       handleCopy();
     }
   }
@@ -753,8 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
   prevBtn.addEventListener('click', handlePrev);
   nextBtn.addEventListener('click', handleNext);
   bookmarkBtn.addEventListener('click', toggleBookmark);
-  speakSynthesisBtn.addEventListener('click', speakDuaa);
-  voiceRecognitionToggle.addEventListener('click', () => toggleListening());
   copyBtn.addEventListener('click', handleCopy);
   shareBtn.addEventListener('click', handleShare);
   
@@ -783,7 +458,6 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsHud.classList.toggle('active');
   });
   
-  // Close settings HUD when clicking outside
   document.addEventListener('click', (e) => {
     if (settingsHud.classList.contains('active') && !e.target.closest('#settings-hud') && !e.target.closest('#settings-toggle')) {
       settingsHud.classList.remove('active');
@@ -806,7 +480,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTheme(newTheme);
   });
 
-  // Access keyboard triggers for accessibility
   duaaCard.addEventListener('keydown', (e) => {
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();

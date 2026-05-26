@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>أذكار وأدعية يوم عرفة - جوامع الأدعية النبوية</title>
+  <meta name="description" content="موقع تفاعلي لعرض وقراءة وحفظ جوامع الأدعية النبوية والأذكار المستحبة في يوم عرفة مع خاصية التكرار بالتصبيح، والتعرف التلقائي على الصوت لقراءة تفاعلية فريدة.">
+  <meta name="keywords" content="أدعية يوم عرفة, أذكار يوم عرفة, جوامع الأدعية, أدعية نبوية, يوم عرفة, حصن المسلم, ابن باز, عبد الرزاق البدر">
+  <meta name="author" content="Antigravity">
+  
+  <!-- Favicon placeholder or simple inline svg favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕌</text></svg>">
+  
+  <!-- FontAwesome Icons for gorgeous HUD styling -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="dark">
+  <!-- Interactive calligraphic background elements -->
+  <div class="bg-overlay-art"></div>
+
+  <div class="app-container">
+    <!-- Header Area -->
+    <header>
+      <div class="brand-section">
+        <h1 class="brand-title" id="main-title">أدعية وأذكار يوم عرفة</h1>
+        <span class="brand-subtitle">جوامع الأدعية النبوية الشريفة</span>
+      </div>
+      
+      <div class="header-controls">
+        <button id="drawer-toggle" class="control-btn" title="قائمة الأدعية" aria-label="عرض قائمة الأدعية">
+          <i class="fa-solid fa-list-ol"></i>
+        </button>
+        <button id="settings-toggle" class="control-btn" title="الإعدادات" aria-label="تعديل الإعدادات والخط">
+          <i class="fa-solid fa-sliders"></i>
+        </button>
+        <button id="theme-toggle" class="control-btn" title="تغيير المظهر" aria-label="التبديل بين المظهر الليلي والنهاري">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Settings Floating HUD Panel -->
+    <div id="settings-hud" class="settings-hud">
+      <div class="hud-group">
+        <label for="font-size-slider" class="hud-label">حجم الخط العربي</label>
+        <input type="range" id="font-size-slider" class="hud-slider" min="1.4" max="3.2" step="0.1" value="2.2">
+      </div>
+      <div class="hud-group">
+        <label for="reps-select" class="hud-label">عدد تكرار كل دعاء</label>
+        <input type="range" id="reps-slider" class="hud-slider" min="1" max="7" step="1" value="1">
+        <span style="font-size: 0.75rem; text-align: center; color: var(--accent-gold); font-weight: bold; margin-top: -5px;" id="reps-value">مرة واحدة</span>
+      </div>
+    </div>
+
+    <!-- Main Supplication Presentation View -->
+    <main>
+      <div class="card-wrapper">
+        <!-- Interactive Card -->
+        <article id="duaa-card" class="duaa-card" tabindex="0" title="اضغط للتكرار أو الانتقال">
+          <!-- Voice match flash indicator overlay -->
+          <div class="voice-match-indicator"></div>
+          
+          <!-- Bookmark Button -->
+          <button id="bookmark-btn" class="card-bookmark-btn" title="حفظ في المفضلة" aria-label="حفظ هذا الدعاء في المفضلة">
+            <i class="fa-regular fa-bookmark"></i>
+          </button>
+          
+          <!-- Metadata title -->
+          <div id="duaa-meta" class="duaa-meta">دعاء يوم عرفة</div>
+          
+          <!-- Arabic text container -->
+          <div class="duaa-text-container">
+            <p id="duaa-arabic" class="duaa-arabic">
+              جاري تحميل الأدعية النبوية الشريفة...
+            </p>
+          </div>
+          
+          <!-- Source/Reference -->
+          <div id="duaa-reference" class="duaa-reference">المصدر</div>
+          
+          <!-- Tasbeeh Repetition Count ring -->
+          <div id="tasbeeh-ring" class="card-tasbeeh-ring" title="عدد التكرارات المتبقية">
+            <svg viewBox="0 0 100 100">
+              <circle class="ring-bg" cx="50" cy="50" r="42" />
+              <circle id="ring-progress" class="ring-progress" cx="50" cy="50" r="42" stroke-dasharray="263.89" stroke-dashoffset="263.89" />
+            </svg>
+            <div class="tasbeeh-count">
+              <span id="current-rep-count">0</span>
+              <span id="target-rep-count" class="tasbeeh-target">/ 1</span>
+            </div>
+          </div>
+          
+          <!-- Voice Input wave animation -->
+          <div id="speech-wave" class="speech-wave-container" title="نظام التعرف التلقائي على الصوت يعمل">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <span style="font-size: 0.75rem; color: var(--accent-emerald); margin-right: 5px; font-weight: 600;">تحدث الآن...</span>
+          </div>
+
+          <!-- Bottom Card instructions -->
+          <div class="card-instruction">
+            <i class="fa-solid fa-hand-pointer"></i>
+            <span id="instruction-label">انقر فوق البطاقة للتكرار</span>
+          </div>
+        </article>
+      </div>
+
+      <!-- Action Toolbar -->
+      <section class="action-toolbar">
+        <!-- Recite TTS Button -->
+        <button id="speak-synthesis-btn" class="action-btn round-action-btn" title="استماع للدعاء بصوت عذب" aria-label="الاستماع لتلاوة الدعاء">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        
+        <!-- Speech Recognition Toggle Button -->
+        <button id="voice-recognition-toggle" class="action-btn voice-toggle-btn" title="التحدث للتنقل التلقائي" aria-label="تفعيل ميزة التحدث لتخطي الدعاء">
+          <i class="fa-solid fa-microphone-slash"></i>
+          <span id="speech-btn-label">التحدث للتنقل</span>
+        </button>
+        
+        <!-- Copy to Clipboard Button -->
+        <button id="copy-btn" class="action-btn round-action-btn" title="نسخ النص" aria-label="نسخ الدعاء إلى الحافظة">
+          <i class="fa-regular fa-copy"></i>
+        </button>
+        
+        <!-- Share button -->
+        <button id="share-btn" class="action-btn round-action-btn" title="مشاركة" aria-label="مشاركة الدعاء">
+          <i class="fa-solid fa-share-nodes"></i>
+        </button>
+      </section>
+    </main>
+
+    <!-- Footer Progression Panel -->
+    <footer>
+      <div class="progression-panel">
+        <div class="progress-info">
+          <span>التقدم الإجمالي للمجلس</span>
+          <span class="progress-pct" id="progress-percentage">0%</span>
+        </div>
+        <div class="progress-bar-outer">
+          <div id="progress-bar-inner" class="progress-bar-inner"></div>
+        </div>
+        
+        <div class="nav-controls">
+          <button id="prev-btn" class="nav-btn" disabled title="السابق" aria-label="الدعاء السابق">
+            <i class="fa-solid fa-chevron-right"></i>
+            <span>السابق</span>
+          </button>
+          
+          <span class="nav-center-indicator" id="nav-indicator">1 / 36</span>
+          
+          <button id="next-btn" class="nav-btn" title="التالي" aria-label="الدعاء التالي">
+            <span>التالي</span>
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Selection Modal Drawer (List View of all 36 Duaas) -->
+  <div id="drawer-overlay" class="drawer-overlay"></div>
+  <aside id="selector-drawer" class="selector-drawer" aria-hidden="true" role="dialog" aria-labelledby="drawer-title">
+    <div class="drawer-header">
+      <h2 id="drawer-title" class="drawer-title">فهرس المجلس الشريف</h2>
+      <button id="drawer-close" class="drawer-close-btn" title="إغلاق الفهرس" aria-label="إغلاق قائمة الأدعية">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    
+    <!-- Filter Tabs (All / Bookmarked) -->
+    <div class="drawer-filter-tabs">
+      <button id="filter-all-btn" class="filter-tab-btn active">كل الأدعية (<span id="all-count">36</span>)</button>
+      <button id="filter-fav-btn" class="filter-tab-btn">المفضلة (<span id="fav-count">0</span>)</button>
+    </div>
+    
+    <!-- Supplications list container -->
+    <div id="duaa-list-container" class="duaa-list-container">
+      <!-- Generated dynamically by app.js -->
+    </div>
+  </aside>
+
+  <!-- Interactive toast message popup -->
+  <div id="toast" class="toast-msg" role="status" aria-live="polite">
+    <i class="fa-solid fa-check"></i>
+    <span id="toast-text">تم النسخ بنجاح</span>
+  </div>
+
+  <!-- Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>
